@@ -46,7 +46,7 @@ module l2_cache_arb_stage(
     // From l2_axi_bus_interface
     input                                 l2bi_request_valid,
     input l2req_packet_t                  l2bi_request,
-    input cache_line_data_t               l2bi_data_from_memory,
+    input cache_line_data_t               l2bi_data_from_memory, //TODO: Should we receive an encrypted line (hamming) from memory here?
     input                                 l2bi_stall,
     input                                 l2bi_collided_miss);
 

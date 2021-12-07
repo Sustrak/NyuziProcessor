@@ -85,7 +85,7 @@ module l2_cache_read_stage(
 
     // To performance_counters
     output logic                              l2r_perf_l2_miss,
-    output logic                              l2r_perf_l2_hit);
+    output logic                              l2r_perf_l2_hit); //TODO: How do we manage the performance counters when an error occurs?
 
     localparam GLOBAL_THREAD_IDX_WIDTH = $clog2(TOTAL_THREADS);
 
@@ -110,6 +110,15 @@ module l2_cache_read_stage(
     l2_way_idx_t tag_update_way;
     logic[GLOBAL_THREAD_IDX_WIDTH - 1:0] request_sync_slot;
 
+    //Hamming related data
+    hamming_512b_t l2u_write_data_hamming;
+    hamming_512b_t l2r_data_hamming;
+    hamming_512b_t l2_read_data_hamming;
+    logic l2_read_error;
+    logic l2_read_corrected;
+    logic l2_read_valid;
+    logic l2_read_enable;
+
     assign load = l2t_request.packet_type == L2REQ_LOAD
         || l2t_request.packet_type == L2REQ_LOAD_SYNC;
     assign store = l2t_request.packet_type == L2REQ_STORE
@@ -130,6 +139,8 @@ module l2_cache_read_stage(
     endgenerate
 
     assign cache_hit = |hit_way_oh && l2t_request_valid;
+    assign l2_read_enable = l2t_request_valid && (cache_hit || l2t_l2_fill)
+    assign l2_read_valid = l2_read_enable && ((!l2_read_error) || (l2_read_error && l2_read_corrected));
 
     oh_to_idx #(.NUM_SIGNALS(`L2_WAYS)) oh_to_idx_hit_way(
         .one_hot(hit_way_oh),
@@ -141,19 +152,42 @@ module l2_cache_read_stage(
         l2t_request.address.set_idx};
 
     //
+    // Hamming for the data written into cache
+    //
+    hamming_512b_encoder hamming_l2_write(
+        .clk(clk),
+        .reset(reset),
+        .word_to_code(l2u_write_data),
+        .coded_word(l2u_write_data_hamming)
+    );
+
+    //
+    // Hamming for the data read from cache
+    //
+    hamming_512b_checker hamming_l2_read(
+        .clk(clk),
+        .reset(reset),
+        .coded_word(l2r_data_hamming),
+        .error(l2_read_error),
+        .corrected(l2_read_corrected),
+        .correct_word_hamming(l2_read_data_hamming),
+        .correct_word(l2r_data)
+    );
+
+    //
     // Cache memory
     //
     sram_1r1w #(
-        .DATA_WIDTH(CACHE_LINE_BITS),
+        .DATA_WIDTH(HAMMING_SIZE),
         .SIZE(`L2_WAYS * `L2_SETS),
         .READ_DURING_WRITE("NEW_DATA")
     ) sram_l2_data(
-        .read_en(l2t_request_valid && (cache_hit || l2t_l2_fill)),
+        .read_en(l2_read_enable),
         .read_addr(read_address),
-        .read_data(l2r_data),
+        .read_data(l2r_data_hamming),
         .write_en(l2u_write_en),
         .write_addr(l2u_write_addr),
-        .write_data(l2u_write_data),
+        .write_data(l2u_write_data_hamming),
         .*);
 
     //
@@ -219,7 +253,7 @@ module l2_cache_read_stage(
     always_ff @(posedge clk)
     begin
         l2r_request <= l2t_request;
-        l2r_cache_hit <= cache_hit;
+        l2r_cache_hit <= cache_hit && l2_read_valid;
         l2r_l2_fill <= l2t_l2_fill;
         l2r_writeback_tag <= l2t_tag[writeback_way];
         l2r_needs_writeback <= l2t_dirty[writeback_way] && l2t_valid[writeback_way];
