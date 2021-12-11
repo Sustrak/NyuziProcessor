@@ -139,7 +139,7 @@ module l2_cache_read_stage(
     endgenerate
 
     assign cache_hit = |hit_way_oh && l2t_request_valid;
-    assign l2_read_enable = l2t_request_valid && (cache_hit || l2t_l2_fill)
+    assign l2_read_enable = l2t_request_valid && (cache_hit || l2t_l2_fill);
     assign l2_read_valid = l2_read_enable && ((!l2_read_error) || (l2_read_error && l2_read_corrected));
 
     oh_to_idx #(.NUM_SIGNALS(`L2_WAYS)) oh_to_idx_hit_way(

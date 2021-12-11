@@ -46,11 +46,11 @@ module hamming_512b_checker(
         error_type[1] = |syndrome;        
     end
     
-    int unsigned pos;
+    //int unsigned pos;
     always_comb begin : error_correction
-        pos = syndrome;
+        //pos = syndrome;
         corrected_data_hamming = coded_word;
-        corrected_data_hamming[pos-1] = ~(coded_word[pos-1]);
+        corrected_data_hamming[syndrome-1] = ~(coded_word[syndrome-1]);
         corrected_data = {corrected_data_hamming[521:512], corrected_data_hamming[510:256], corrected_data_hamming[254:128],
                           corrected_data_hamming[126:64], corrected_data_hamming[62:32], corrected_data_hamming[30:16],
                           corrected_data_hamming[14:8], corrected_data_hamming[6:4], corrected_data_hamming[2]};

@@ -105,6 +105,7 @@ def run_unit_test(filename, _):
         '--unroll-count', '512',
         '--assert',
         '-I' + test_harness.HARDWARE_INCLUDE_DIR,
+        '-y ' + test_harness.ECC_INCLUDE_DIR,
         '-DSIMULATION=1',
         '-Mdir', test_harness.WORK_DIR,
         '-cc', filename,
