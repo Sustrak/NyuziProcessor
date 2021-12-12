@@ -43,12 +43,12 @@ module hamming_512b_encoder(
         for(int i = 58; i <= 119; i +=4)
             parity[1] ^= (^word_to_code[i+:2]);
         for(int i = 121; i <= 246; i +=4)
-            parity[1] ^= word_to_code[i+:2];
+            parity[1] ^= (^word_to_code[i+:2]);
         for(int i = 248; i <= 501; i +=4)
-            parity[1] ^= word_to_code[i+:2];
+            parity[1] ^= (^word_to_code[i+:2]);
     end
     always_comb begin : parity2
-        parity[2] = ^word_to_code[3:1];
+        parity[2] = (^word_to_code[3:1]);
         parity[2] ^= (^word_to_code[10:7]);
         parity[2] ^= (^word_to_code[17:14]) ^ (^word_to_code[25:22]);
         for(int i = 29; i <= 56; i +=8)
