@@ -110,6 +110,9 @@ module l2_cache_read_stage(
     l2_way_idx_t tag_update_way;
     logic[GLOBAL_THREAD_IDX_WIDTH - 1:0] request_sync_slot;
 
+    logic cache_hit_r;
+    logic l2_read_enable_r;
+
     //Hamming related data
     hamming_512b_t l2u_write_data_hamming;
     hamming_512b_t l2r_data_hamming;
@@ -140,7 +143,7 @@ module l2_cache_read_stage(
 
     assign cache_hit = |hit_way_oh && l2t_request_valid;
     assign l2_read_enable = l2t_request_valid && (cache_hit || l2t_l2_fill);
-    assign l2_read_valid = l2_read_enable && ((!l2_read_error) || (l2_read_error && l2_read_corrected));
+    assign l2_read_valid = l2_read_enable_r && ((!l2_read_error) || (l2_read_error && l2_read_corrected));
 
     oh_to_idx #(.NUM_SIGNALS(`L2_WAYS)) oh_to_idx_hit_way(
         .one_hot(hit_way_oh),
@@ -250,10 +253,13 @@ module l2_cache_read_stage(
         && (l2t_request.packet_type == L2REQ_STORE || can_store_sync
         || l2t_request.packet_type == L2REQ_LOAD ) && !l2t_l2_fill;
 
+    assign l2r_cache_hit = cache_hit_r && l2_read_valid;
+
     always_ff @(posedge clk)
     begin
         l2r_request <= l2t_request;
-        l2r_cache_hit <= cache_hit && l2_read_valid;
+        l2_read_enable_r <= l2_read_enable;
+        cache_hit_r <= cache_hit;
         l2r_l2_fill <= l2t_l2_fill;
         l2r_writeback_tag <= l2t_tag[writeback_way];
         l2r_needs_writeback <= l2t_dirty[writeback_way] && l2t_valid[writeback_way];

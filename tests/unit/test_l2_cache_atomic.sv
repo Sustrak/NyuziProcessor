@@ -208,8 +208,8 @@ module test_l2_cache_atomic(input clk, input reset);
                     assert(l2_response.id == 2);
                     assert(l2_response.packet_type == L2RSP_STORE_ACK);
                     assert(l2_response.address == ADDR0);
-                    assert(l2_response.data == DATA1);
                     assert(!l2_response.status); // unsuccessful
+                    assert(l2_response.data == DATA1);
                     state <= state + 1;
                 end
 
