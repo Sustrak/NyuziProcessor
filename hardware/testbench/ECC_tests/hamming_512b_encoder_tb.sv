@@ -21,7 +21,7 @@ module hamming_encoder_tb();
     cache_line_data_t in_word;
     hamming_512b_t out_word;
 
-    hamming_encoder dut(
+    hamming_512b_encoder dut(
         .clk (clk),
         .reset (reset),
         .word_to_code(in_word),
@@ -165,6 +165,13 @@ module hamming_encoder_tb();
       #20;
       if (out_word != 524'h0442222222222222222222222222222222222222222222222222222222222222222111111111111111111111111111111110888888888888888c444444422221107) begin
         $error("Error coding 10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000");
+        $displayh("Value of in_word: %h", in_word);
+        $displayh("Value of out_word: %h", out_word);
+      end
+      in_word = 512'h8DDC6625B5F211958E5D77EEA014D0500F39AB63BC3CC75F360BF2961BEF34EC8F095B878488ED87BC3D499699660ADBD5B3A99E8E5FD7A6B28F1B2FDC960D31;
+      #20
+      if (out_word != 524'h23738cc4b6be4232b1cbaefdd4029a0a01e7356c778798ebe6c17e52c37de69d91e895b878488ed87bc3d499699660adbd5d9d4cf472febd35923c6cbf712c15387) begin
+        $error("Error coding 8DDC6625B5F211958E5D77EEA014D0500F39AB63BC3CC75F360BF2961BEF34EC8F095B878488ED87BC3D499699660ADBD5B3A99E8E5FD7A6B28F1B2FDC960D31");
         $displayh("Value of in_word: %h", in_word);
         $displayh("Value of out_word: %h", out_word);
       end
