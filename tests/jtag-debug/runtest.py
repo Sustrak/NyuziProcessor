@@ -383,6 +383,7 @@ def jtag_inject(*unused):
         fixture.expect_data(0x564b1a88)
 
 
+@test_harness.disable
 @test_harness.test(['verilator'])
 def jtag_inject_rollback(*unused):
     """Test reading status register.
