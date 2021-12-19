@@ -100,6 +100,7 @@ module l2_cache_read_stage(
     logic[`L2_WAYS - 1:0] hit_way_oh;
     logic cache_hit;
     l2_way_idx_t hit_way_idx;
+    l2_way_idx_t hit_way_idx_r;
     logic[$clog2(`L2_WAYS * `L2_SETS) - 1:0] read_address;
     logic load;
     logic store;
@@ -180,10 +181,11 @@ module l2_cache_read_stage(
         .correct_word(l2r_data)
     );
 
-    assign l2r_hamming_error = cache_hit_r && l2_read_error && !l2_read_corrected;
+    assign l2r_hamming_error = l2_read_enable && cache_hit_r && l2_read_error && !l2_read_corrected;
     always_ff @(posedge clk)
     begin
         l2r_hamming_set_idx <= l2t_request.address.set_idx;
+        hit_way_idx_r <= hit_way_idx;
     end
 
     //
@@ -204,9 +206,9 @@ module l2_cache_read_stage(
 
     always_comb
     begin
-        if (1'($random()))
-            l2r_data_hamming_2 = {l2r_data_hamming[HAMMING_SIZE-1:6], ~l2r_data_hamming[5], ~l2r_data_hamming[4], l2r_data_hamming[3:0]};
-        else
+        //if (1'($random()))
+        //    l2r_data_hamming_2 = {l2r_data_hamming[HAMMING_SIZE-1:6], ~l2r_data_hamming[5], ~l2r_data_hamming[4], l2r_data_hamming[3:0]};
+        //else
             l2r_data_hamming_2 = l2r_data_hamming;
     end
 
@@ -255,6 +257,15 @@ module l2_cache_read_stage(
     //
     assign l2r_update_lru_en = cache_hit && (load || store);
     assign l2r_update_lru_hit_way = hit_way_idx;
+
+    always_comb
+    begin
+        if (l2r_hamming_error && l2t_dirty[hit_way_idx_r]) begin
+            $display("Can not recover the state of the machine. HALT!!!!");
+            $finish();
+            $finish();
+        end
+    end
 
     //
     // Synchronized requests

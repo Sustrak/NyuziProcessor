@@ -74,14 +74,14 @@ module sram_1r1w_pb
     assign ecc_pb_error = pb_error & read_en;
     //assign ecc_pb_error = (read_addr == 8'h80) ? 1'b1 : 1'b0;
 
-    always_comb
-    begin
-        parity_bit = data_pb[read_addr];
-        if (1'($random())) begin
-            parity_bit = !data_pb[read_addr];
-        end
-    end
-    //assign parity_bit = data_pb[read_addr];
+    //always_comb
+    //begin
+    //    parity_bit = data_pb[read_addr];
+    //    if (1'($random())) begin
+    //        parity_bit = !data_pb[read_addr];
+    //    end
+    //end
+    assign parity_bit = data_pb[read_addr];
 
     // Note: use always here instead of always_ff so Modelsim will allow
     // initializing the array in the initial block (see below).

@@ -64,6 +64,7 @@ module test_ifetch_tag_stage(input clk, input reset);
     logic ocd_halt;
     local_thread_idx_t ocd_thread;
     int cycle;
+    logic ifd_ecc_error;
 
     ifetch_tag_stage ifetch_tag_stage(.*);
 

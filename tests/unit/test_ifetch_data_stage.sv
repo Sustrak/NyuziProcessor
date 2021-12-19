@@ -74,6 +74,7 @@ module test_ifetch_data_stage(input clk, input reset);
     int cache_hit_count;
     int cache_miss_count;
     int tlb_miss_count;
+    logic                         ifd_ecc_error;
 
     ifetch_data_stage ifetch_data_stage(.*);
 

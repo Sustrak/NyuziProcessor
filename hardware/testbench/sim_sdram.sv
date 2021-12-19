@@ -250,10 +250,12 @@ module sim_sdram
         end
 `endif
 
+`ifdef SDRAM_DEBUG
     if ((burst_active && cke_ff && burst_w) || cmd_write_burst)
         $display(" write %08x", dram_dq);
     else if (burst_active && !burst_w && !cmd_write_burst)
         $display(" read %08x", dram_dq);
+`endif
     end
 
     // RAM read
