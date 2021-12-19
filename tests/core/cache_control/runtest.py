@@ -54,6 +54,7 @@ def dflush(_, target):
                     BASE_ADDRESS + (index * 4), expected, num_val))
 
 
+@test_harness.disable
 @test_harness.test(['verilator'])
 def dinvalidate(_, target):
     hex_file = test_harness.build_program(['dinvalidate.S'])
@@ -65,6 +66,10 @@ def dinvalidate(_, target):
         dump_length=4,
         flush_l2=True,
         trace=True)
+
+    print("=====RESULT=====")
+    print(result)
+    print("=====ENDRESULT==")
 
     # 1. Check that the proper value was read into s2
     if '02 deadbeef' not in result:

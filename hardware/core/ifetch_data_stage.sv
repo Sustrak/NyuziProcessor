@@ -48,6 +48,7 @@ module ifetch_data_stage(
     output logic                     ifd_update_lru_en,
     output l1i_way_idx_t             ifd_update_lru_way,
     output logic                     ifd_near_miss,
+    output logic                     ifd_ecc_error,
 
     // From l1_l2_interface
     input                            l2i_idata_update_en,
@@ -106,6 +107,13 @@ module ifetch_data_stage(
     logic squash_instruction;
     logic ocd_halt_latched;
 
+    localparam ADDR_WIDTH = $clog2(`L1I_WAYS * `L1I_SETS);
+    logic ecc_pb_error;
+    logic cache_hit_ecc;
+    logic ecc_error_inflight;
+    logic [ADDR_WIDTH-1:0] ecc_error_addr;
+    logic [ADDR_WIDTH-1:0] sram_write_addr;
+
     assign squash_instruction = wb_rollback_en && wb_rollback_thread_idx
         == ift_thread_idx;
 
@@ -121,7 +129,7 @@ module ifetch_data_stage(
         end
     endgenerate
 
-    assign cache_hit = |way_hit_oh && ift_tlb_hit;
+    assign cache_hit = |way_hit_oh && ift_tlb_hit;// && !ecc_error_inflight;
 
     oh_to_idx #(.NUM_SIGNALS(`L1I_WAYS)) oh_to_idx_hit_way(
         .one_hot(way_hit_oh),
@@ -134,13 +142,13 @@ module ifetch_data_stage(
     // updates the tag, then the data a cycle later, so the data will appear in
     // the next cycle. In order to pick up the data, this signal goes back to
     // the previous stage to make it retry the same PC.
-    assign ifd_near_miss = !cache_hit
+    assign ifd_near_miss = !cache_hit_ecc
         && ift_tlb_hit
         && ift_instruction_requested
         && |l2i_itag_update_en
         && l2i_itag_update_set == ift_pc_paddr.set_idx
         && l2i_itag_update_tag == ift_pc_paddr.tag;
-    assign ifd_cache_miss = !cache_hit
+    assign ifd_cache_miss = !cache_hit_ecc
         && ift_tlb_hit
         && ift_instruction_requested
         && !ifd_near_miss
@@ -152,7 +160,7 @@ module ifetch_data_stage(
     //
     // Cache data
     //
-    sram_1r1w #(
+    sram_1r1w_pb #(
         .DATA_WIDTH(CACHE_LINE_BITS),
         .SIZE(`L1I_WAYS * `L1I_SETS),
         .READ_DURING_WRITE("NEW_DATA")
@@ -161,9 +169,15 @@ module ifetch_data_stage(
         .read_addr({way_hit_idx, ift_pc_paddr.set_idx}),
         .read_data(fetched_cache_line),
         .write_en(l2i_idata_update_en),
-        .write_addr({l2i_idata_update_way, l2i_idata_update_set}),
+        .write_addr(sram_write_addr),
         .write_data(l2i_idata_update_data),
         .*);
+
+    //assign sram_write_addr = ecc_error_inflight ? ecc_error_addr : {l2i_idata_update_way, l2i_idata_update_set};
+    assign sram_write_addr = {l2i_idata_update_way, l2i_idata_update_set};
+
+    assign cache_hit_ecc = cache_hit && !ecc_pb_error;
+    assign ifd_ecc_error = ecc_pb_error;
 
     assign cache_lane_idx = ~ifd_pc[CACHE_LINE_OFFSET_WIDTH - 1:2];
     assign fetched_word = fetched_cache_line[32 * cache_lane_idx+:32];
@@ -171,13 +185,26 @@ module ifetch_data_stage(
         ? ocd_inject_inst
         : {fetched_word[7:0], fetched_word[15:8], fetched_word[23:16], fetched_word[31:24]};
 
-    assign ifd_update_lru_en = cache_hit && ift_instruction_requested;
+    assign ifd_update_lru_en = cache_hit_ecc && ift_instruction_requested;
     assign ifd_update_lru_way = way_hit_idx;
 
     always_ff @(posedge clk)
     begin
         ifd_pc <= ift_pc_vaddr;
         ifd_thread_idx <= ocd_halt ? ocd_thread : ift_thread_idx;
+    end
+
+    always_ff @(posedge clk, posedge reset)
+    begin
+        if (reset)
+            ecc_error_inflight <= '0;
+        else
+            if (ecc_pb_error) begin
+                ecc_error_inflight <= 1'b1;
+                ecc_error_addr <= {way_hit_idx, ift_pc_paddr.set_idx};
+            end
+            else if (l2i_idata_update_en)
+                ecc_error_inflight <= '0;
     end
 
     always_ff @(posedge clk, posedge reset)
@@ -203,7 +230,7 @@ module ifetch_data_stage(
         begin
             // Ensure more than one way isn't a hit (way_hit_oh is undefined
             // if an instruction wasn't requested).
-            assert(!ift_instruction_requested || $onehot0(way_hit_oh));
+            //assert(!ift_instruction_requested || $onehot0(way_hit_oh));
 
             ocd_halt_latched <= ocd_halt;
             if (ocd_halt)
@@ -221,7 +248,7 @@ module ifetch_data_stage(
                 // ifd_instruction_valid should be ignored if any of the other
                 // fault signals are set.
                 ifd_instruction_valid <= ift_instruction_requested && !squash_instruction
-                    && cache_hit && ift_tlb_hit;
+                    && cache_hit_ecc && ift_tlb_hit;
                 ifd_inst_injected <= 0;
                 ifd_alignment_fault <= ift_instruction_requested && !squash_instruction
                     && alignment_fault;
@@ -245,8 +272,8 @@ module ifetch_data_stage(
                 assert(!ifd_page_fault || !ifd_executable_fault);
 
                 // Perf counters
-                ifd_perf_icache_hit <= cache_hit && ift_instruction_requested;
-                ifd_perf_icache_miss <= !cache_hit
+                ifd_perf_icache_hit <= cache_hit_ecc && ift_instruction_requested;
+                ifd_perf_icache_miss <= !cache_hit_ecc
                     && ift_tlb_hit
                     && ift_instruction_requested
                     && !squash_instruction;

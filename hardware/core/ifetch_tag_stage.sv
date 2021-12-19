@@ -41,6 +41,7 @@ module ifetch_tag_stage
     input                               ifd_cache_miss,
     input                               ifd_near_miss,
     input local_thread_idx_t            ifd_cache_miss_thread_idx,
+    input logic                         ifd_ecc_error,
 
     // To ifetch_data_stage
     output logic                        ift_instruction_requested,
@@ -201,6 +202,8 @@ module ifetch_tag_stage
                 end
                 else
                 begin
+                    if (ifd_ecc_error)
+                        line_valid[ift_pc_paddr.set_idx] <= 1'b0;
                     if (l2i_itag_update_en[way_idx])
                         line_valid[l2i_itag_update_set] <= l2i_itag_update_valid;
                 end

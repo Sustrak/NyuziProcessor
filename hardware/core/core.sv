@@ -260,6 +260,7 @@ module core
     logic               ifd_tlb_miss;           // From ifetch_data_stage of ifetch_data_stage.v
     logic               ifd_update_lru_en;      // From ifetch_data_stage of ifetch_data_stage.v
     l1i_way_idx_t       ifd_update_lru_way;     // From ifetch_data_stage of ifetch_data_stage.v
+    logic               ifd_ecc_error;          // From ifetch_data_stage of ifetch_data_stage.v
     l1i_way_idx_t       ift_fill_lru;           // From ifetch_tag_stage of ifetch_tag_stage.v
     logic               ift_instruction_requested;// From ifetch_tag_stage of ifetch_tag_stage.v
     l1i_addr_t          ift_pc_paddr;           // From ifetch_tag_stage of ifetch_tag_stage.v
