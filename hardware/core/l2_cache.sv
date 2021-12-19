@@ -80,6 +80,8 @@ module l2_cache(
     logic               l2r_request_valid;      // From l2_cache_read_stage of l2_cache_read_stage.v
     logic               l2r_restarted_flush;    // From l2_cache_read_stage of l2_cache_read_stage.v
     logic               l2r_store_sync_success; // From l2_cache_read_stage of l2_cache_read_stage.v
+    logic               l2r_hamming_error;      // From l2_cache_read_stage of l2_cache_read_stage.v
+    l2_set_idx_t        l2r_hamming_set_idx;
     logic [`L2_WAYS-1:0] l2r_update_dirty_en;   // From l2_cache_read_stage of l2_cache_read_stage.v
     l2_set_idx_t        l2r_update_dirty_set;   // From l2_cache_read_stage of l2_cache_read_stage.v
     logic               l2r_update_dirty_value; // From l2_cache_read_stage of l2_cache_read_stage.v

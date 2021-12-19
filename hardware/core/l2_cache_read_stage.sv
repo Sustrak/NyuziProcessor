@@ -62,6 +62,8 @@ module l2_cache_read_stage(
     output l2_tag_t                           l2r_update_tag_value,
     output logic                              l2r_update_lru_en,
     output l2_way_idx_t                       l2r_update_lru_hit_way,
+    output logic                              l2r_hamming_error,
+    output l2_set_idx_t                       l2r_hamming_set_idx,
 
     // From l2_cache_update_stage
     input                                     l2u_write_en,
@@ -116,6 +118,7 @@ module l2_cache_read_stage(
     //Hamming related data
     hamming_512b_t l2u_write_data_hamming;
     hamming_512b_t l2r_data_hamming;
+    hamming_512b_t l2r_data_hamming_2;
     hamming_512b_t l2_read_data_hamming;
     logic l2_read_error;
     logic l2_read_corrected;
@@ -170,12 +173,18 @@ module l2_cache_read_stage(
     hamming_512b_checker hamming_l2_read(
         .clk(clk),
         .reset(reset),
-        .coded_word(l2r_data_hamming),
+        .coded_word(l2r_data_hamming_2),
         .error(l2_read_error),
         .corrected(l2_read_corrected),
         .correct_word_hamming(l2_read_data_hamming),
         .correct_word(l2r_data)
     );
+
+    assign l2r_hamming_error = cache_hit_r && l2_read_error && !l2_read_corrected;
+    always_ff @(posedge clk)
+    begin
+        l2r_hamming_set_idx <= l2t_request.address.set_idx;
+    end
 
     //
     // Cache memory
@@ -192,6 +201,14 @@ module l2_cache_read_stage(
         .write_addr(l2u_write_addr),
         .write_data(l2u_write_data_hamming),
         .*);
+
+    always_comb
+    begin
+        if (1'($random()))
+            l2r_data_hamming_2 = {l2r_data_hamming[HAMMING_SIZE-1:6], ~l2r_data_hamming[5], ~l2r_data_hamming[4], l2r_data_hamming[3:0]};
+        else
+            l2r_data_hamming_2 = l2r_data_hamming;
+    end
 
     //
     // Update dirty bits. If this is a fill, initialize the dirty bit to the correct

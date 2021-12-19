@@ -45,6 +45,8 @@ module l2_cache_tag_stage(
     input l2_tag_t                        l2r_update_tag_value,
     input                                 l2r_update_lru_en,
     input l2_way_idx_t                    l2r_update_lru_hit_way,
+    input logic                           l2r_hamming_error,
+    input l2_set_idx_t                    l2r_hamming_set_idx,
 
     // To l2_cache_read_stage
     output logic                          l2t_request_valid,
@@ -119,6 +121,8 @@ module l2_cache_tag_stage(
                 end
                 else if (l2r_update_tag_en[way_idx])
                     line_valid[l2r_update_tag_set] <= l2r_update_tag_valid;
+                if (l2r_hamming_error)
+                    line_valid[l2r_hamming_set_idx] <= 1'b0;
             end
 
             always_ff @(posedge clk)
