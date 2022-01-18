@@ -169,6 +169,23 @@ module ifetch_tag_stage
 
     assign pc_to_fetch = next_program_counter[ocd_halt ? ocd_thread : selected_thread_idx];
 
+    logic [$clog2(`L1I_SETS)-1:0] rindex, windex;
+
+    // Random modulo
+    random_placement #(
+        .INDX_BITS($clog2(`L1I_SETS)),
+        .ADDR_BITS($clog2(`L1I_SETS)+ICACHE_TAG_BITS),
+        .CONT_BITS(12)
+    ) rnd_placement (
+        .clk    (clk),
+        .reset  (reset),
+        .reseed ('0),
+        .raddr  ({pc_to_fetch.tag, pc_to_fetch.set_idx}),
+        .waddr  ({l2i_itag_update_tag, l2i_itag_update_set}),
+        .rindex (rindex),
+        .windex (windex)
+    );
+
     //
     // Cache way metadata
     //
@@ -186,10 +203,10 @@ module ifetch_tag_stage
                 .READ_DURING_WRITE("NEW_DATA")
             ) sram_tags(
                 .read_en(cache_fetch_en),
-                .read_addr(pc_to_fetch.set_idx),
+                .read_addr(rindex),
                 .read_data(ift_tag[way_idx]),
                 .write_en(l2i_itag_update_en[way_idx]),
-                .write_addr(l2i_itag_update_set),
+                .write_addr(windex),
                 .write_data(l2i_itag_update_tag),
                 .*);
 

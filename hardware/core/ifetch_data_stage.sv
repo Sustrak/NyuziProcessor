@@ -176,7 +176,7 @@ module ifetch_data_stage(
     //assign sram_write_addr = ecc_error_inflight ? ecc_error_addr : {l2i_idata_update_way, l2i_idata_update_set};
     assign sram_write_addr = {l2i_idata_update_way, l2i_idata_update_set};
 
-    assign cache_hit_ecc = cache_hit && !ecc_pb_error;
+    assign cache_hit_ecc = cache_hit && !ecc_pb_error && !ecc_error_inflight;
     assign ifd_ecc_error = ecc_pb_error;
 
     assign cache_lane_idx = ~ifd_pc[CACHE_LINE_OFFSET_WIDTH - 1:2];

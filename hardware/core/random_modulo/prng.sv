@@ -14,7 +14,7 @@ module prng
     (input                   clk,
     input                    reset,
 
-    output logic[SIZE-1:0]   rand_o);
+    output logic[NNUM-1:0]   rand_o);
 
     //Actual code
     logic[NBITS-1:0] lsfr;
@@ -35,15 +35,15 @@ module prng
         end
     endgenerate
     
-    always_ff @(posedge clk ) 
+    always_ff @(posedge clk, posedge reset) 
     begin 
         if(reset)
             lsfr <= SEED;
         else begin
-            for(int i = NBITS-1; i >= NNUM; i--)
-                lsfr[i] <= lsfr[i-1];
-            for(int i = NNUM-1; i >= 0; i--)
-                lsfr[i] <= xnor_o[i];
+            for(int j = NBITS-1; j >= NNUM; j--)
+                lsfr[j] <= lsfr[j-1];
+            for(int j = NNUM-1; j >= 0; j--)
+                lsfr[j] <= xnor_o[j];
         end    
     end
     

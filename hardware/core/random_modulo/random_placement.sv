@@ -50,12 +50,12 @@ module random_placement
         .word_o(rindex)
     );
 
-    always_ff @(posedge clk) 
+    always_ff @(posedge clk, posedge reset) 
     begin
         if(reset)
-            seed <= {CONT_BITS{1'b0}};
-        else if(reseed)
-            seed <= prng_o;        
+            seed <= prng_o;
+        //else if(reseed)
+        //    seed <= prng_o;        
     end
 
 endmodule

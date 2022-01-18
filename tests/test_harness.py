@@ -50,6 +50,7 @@ LIB_INCLUDE_DIR = default_config['LIB_INCLUDE_DIR']
 COMPILER_BIN_DIR = default_config['COMPILER_BIN_DIR']
 HARDWARE_INCLUDE_DIR = default_config['HARDWARE_INCLUDE_DIR']
 ECC_INCLUDE_DIR = default_config['ECC_INCLUDE_DIR']
+RANDOM_MODULO_INCLUDE_DIR = default_config['RANDOM_MODULO_INCLUDE_DIR']
 
 VSIM_PATH = os.path.join(TOOL_BIN_DIR, 'nyuzi_vsim')
 EMULATOR_PATH = os.path.join(TOOL_BIN_DIR, 'nyuzi_emulator')

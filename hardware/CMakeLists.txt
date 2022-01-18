@@ -42,9 +42,11 @@ set(VERILATOR_OPTIONS --unroll-count 512
     -DSIMULATION=1
     -I${CMAKE_CURRENT_SOURCE_DIR}/core
     -I${CMAKE_CURRENT_SOURCE_DIR}/core/ecc
+    -I${CMAKE_CURRENT_SOURCE_DIR}/core/random_modulo
     -y ${CMAKE_CURRENT_SOURCE_DIR}/testbench
     -y ${CMAKE_CURRENT_SOURCE_DIR}/fpga/common
     -y ${CMAKE_CURRENT_SOURCE_DIR}/core/ecc
+    -y ${CMAKE_CURRENT_SOURCE_DIR}/core/random_modulo
     -Mdir ${VERILATOR_GEN_DIR}
     --threads ${NUM_THREADS})
 
